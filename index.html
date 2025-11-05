@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HotelClean Manager</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+</head>
+
+<body>
+    <header>
+        <div class="container">
+            <nav>
+                <div class="logo">HotelClean Manager</div>
+                <ul class="nav-links">
+                    <li><a href="#" class="nav-link" data-page="dashboard">Tableau de bord</a></li>
+                    <li><a href="#" class="nav-link" data-page="add-room">Ajouter chambre</a></li>
+                    <li><a href="#" class="nav-link" data-page="statistics">Statistiques</a></li>
+                    <li><a href="#" class="nav-link" data-page="profile">Profil</a></li>
+                    <li><a href="#" id="logout-btn">Déconnexion</a></li>
+                </ul>
+                <div class="hamburger">☰</div>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <!-- Navigation mobile - visible seulement sur mobile ET pas sur auth -->
+        <div class="mobile-nav" id="mobile-navigation">
+            <a href="#" class="mobile-nav-btn nav-link" data-page="dashboard">
+                <span class="icon">📊</span>
+                <span class="label">Board</span> <!-- Texte plus court -->
+            </a>
+            <a href="#" class="mobile-nav-btn nav-link" data-page="add-room">
+                <span class="icon">➕</span>
+                <span class="label">Ajouter</span>
+            </a>
+            <a href="#" class="mobile-nav-btn nav-link" data-page="statistics">
+                <span class="icon">📈</span>
+                <span class="label">Stats</span>
+            </a>
+            <a href="#" class="mobile-nav-btn nav-link" data-page="profile">
+                <span class="icon">👤</span>
+                <span class="label">Profil</span>
+            </a>
+            <!-- Bouton déconnexion mobile maintenant dans la même ligne -->
+            <a href="#" class="mobile-nav-logout" id="mobile-logout-btn">
+                <span class="icon">🚪</span>
+                <span class="label">Sortir</span> <!-- Texte plus court -->
+            </a>
+        </div>
+
+        <!-- Page d'authentification -->
+        <div id="auth-page" class="page active">
+            <div class="auth-container" id="login-container">
+                <h2>Connexion</h2>
+                <form id="login-form">
+                    <div class="form-group">
+                        <label for="login-username">Nom d'utilisateur</label>
+                        <input type="text" id="login-username" autocomplete="username" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="login-password">Mot de passe</label>
+                        <input type="password" id="login-password" autocomplete="current-password" required>
+                    </div>
+                    <button type="submit" class="btn btn-block">Se connecter</button>
+                </form>
+                <div class="auth-switch">
+                    <a href="#" id="switch-to-register">Créer un compte</a>
+                </div>
+            </div>
+
+            <div class="auth-container" id="register-container" style="display: none;">
+                <h2>Inscription</h2>
+                <form id="register-form">
+                    <div class="form-group">
+                        <label for="register-username">Nom d'utilisateur</label>
+                        <input type="text" id="register-username" autocomplete="username" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="register-password">Mot de passe</label>
+                        <input type="password" id="register-password" autocomplete="new-password" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="register-confirm">Confirmer le mot de passe</label>
+                        <input type="password" id="register-confirm" autocomplete="new-password" required>
+                    </div>
+                    <button type="submit" class="btn btn-block">S'inscrire</button>
+                </form>
+                <div class="auth-switch">
+                    <a href="#" id="switch-to-login">Déjà un compte ? Se connecter</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tableau de bord -->
+        <div id="dashboard-page" class="page">
+            <div class="dashboard-header">
+                <h1>Tableau de bord</h1>
+                <div class="dashboard-actions">
+                    <div class="dashboard-tabs">
+                        <button id="dashboard-daily" class="btn">Quotidien</button>
+                        <button id="dashboard-monthly" class="btn active">Mensuel</button>
+                    </div>
+                    <div class="date-filter">
+                        <input type="date" id="date-filter" class="form-control" placeholder="Date spécifique">
+                        <small class="form-help">Optionnel: pour filtrer sur une date précise</small>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Indicateur de période -->
+            <div class="period-indicator">
+                <span id="current-period">Mois courant</span>
+                <button class="btn-clear-filter" id="clear-date-filter" style="display: none;">
+                    ✕ Retour au mode
+                </button>
+            </div>
+
+            <!-- Stats rapides -->
+            <div class="quick-stats">
+                <div class="quick-stat">
+                    <div class="quick-stat-value" id="total-rooms">0</div>
+                    <div class="quick-stat-label">Total</div>
+                </div>
+                <div class="quick-stat">
+                    <div class="quick-stat-value" id="depart-rooms">0</div>
+                    <div class="quick-stat-label">Départs</div>
+                </div>
+                <div class="quick-stat">
+                    <div class="quick-stat-value" id="restant-rooms">0</div>
+                    <div class="quick-stat-label">Restants</div>
+                </div>
+                <div class="quick-stat">
+                    <div class="quick-stat-value" id="total-revenue">0 €</div>
+                    <div class="quick-stat-label">Revenus</div>
+                </div>
+            </div>
+
+            <!-- Recherche et filtres -->
+            <div class="search-and-filters">
+                <div class="search-group">
+                    <input type="text" id="search-input" class="search-input"
+                        placeholder="Rechercher par numéro de chambre ou remarque...">
+                    <button id="search-btn" class="search-btn">🔍</button>
+                </div>
+
+                <div class="filters-row">
+                    <select id="status-filter" class="filter-select">
+                        <option value="all">Tous les statuts</option>
+                        <option value="Restant">Restant</option>
+                        <option value="Départ">Départ</option>
+                    </select>
+
+                    <select id="price-filter" class="filter-select">
+                        <option value="all">Tous les prix</option>
+                        <option value="5">5 €</option>
+                        <option value="10">10 €</option>
+                        <option value="15">15 €</option>
+                        <option value="20">20 €</option>
+                    </select>
+
+                    <select id="date-range-filter" class="filter-select">
+                        <option value="all">Toutes les dates</option>
+                        <option value="today">Aujourd'hui</option>
+                        <option value="week">Cette semaine</option>
+                        <option value="month">Ce mois</option>
+                    </select>
+
+                    <div class="items-per-page">
+                        <label>Par page:</label>
+                        <select id="items-per-page">
+                            <option value="10">10</option>
+                            <option value="20" selected>20</option>
+                            <option value="50">50</option>
+                            <option value="100">100</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="results-info" id="results-info">
+                    <!-- Informations sur les résultats -->
+                </div>
+            </div>
+
+            <!-- Liste des chambres -->
+            <div id="rooms-container" class="rooms-grid">
+                <!-- Les cartes de chambres seront ajoutées ici dynamiquement -->
+            </div>
+
+            <!-- Pagination -->
+            <div class="pagination-container">
+                <div class="pagination-controls">
+                    <button id="prev-page" class="pagination-btn">◀ Précédent</button>
+                    <div id="page-numbers"></div>
+                    <button id="next-page" class="pagination-btn">Suivant ▶</button>
+                </div>
+                <div class="pagination-info" id="pagination-info">Page 1 sur 1</div>
+            </div>
+        </div>
+
+        <!-- Ajouter/Modifier une chambre -->
+        <div id="add-room-page" class="page">
+            <div class="form-container">
+                <div class="form-header">
+                    <h1 id="form-title">Ajouter une chambre</h1>
+                    <p>Gestion des nettoyages - États Restant et Départ uniquement</p>
+                </div>
+                <form id="room-form">
+                    <input type="hidden" id="room-id">
+                    <div class="form-group">
+                        <label for="room-date">Date</label>
+                        <input type="date" id="room-date" required>
+                        <small class="form-help">Vous pouvez modifier la date si nécessaire</small>
+                    </div>
+                    <div class="form-group">
+                        <label for="room-number">Numéro de chambre</label>
+                        <input type="number" id="room-number" min="1" max="9999" required placeholder="Ex: 101, 205...">
+                        <small class="form-help">Le numéro de chambre doit être unique pour cette date</small>
+                    </div>
+                    <div class="form-group">
+                        <label for="room-status">État de la chambre</label>
+                        <div class="status-options">
+                            <div class="status-option">
+                                <input type="radio" id="status-restant" name="status" value="Restant" required>
+                                <label for="status-restant" class="status-restant">
+                                    <span class="status-icon">🛏️</span>
+                                    <span class="status-text">Restant</span>
+                                </label>
+                            </div>
+                            <div class="status-option">
+                                <input type="radio" id="status-depart" name="status" value="Départ" required>
+                                <label for="status-depart" class="status-depart">
+                                    <span class="status-icon">🚪</span>
+                                    <span class="status-text">Départ</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Prix du nettoyage</label>
+                        <div class="price-options">
+                            <div class="price-option">
+                                <input type="radio" id="price-5" name="price" value="5" checked>
+                                <label for="price-5">5 €</label>
+                            </div>
+                            <div class="price-option">
+                                <input type="radio" id="price-10" name="price" value="10">
+                                <label for="price-10">10 €</label>
+                            </div>
+                            <div class="price-option">
+                                <input type="radio" id="price-other" name="price" value="other">
+                                <label for="price-other">Autre</label>
+                            </div>
+                        </div>
+                        <div class="form-group custom-price" id="custom-price-container">
+                            <input type="number" id="custom-price" min="1" step="0.5"
+                                placeholder="Prix personnalisé (€)">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="room-remark">Remarque (optionnelle)</label>
+                        <textarea id="room-remark" rows="3" placeholder="Notes supplémentaires..."></textarea>
+                    </div>
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary">
+                            <span id="save-btn-text">Ajouter la chambre</span>
+                        </button>
+                        <button type="button" class="btn btn-secondary" onclick="showPage('dashboard')">Annuler</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Statistiques -->
+        <div id="statistics-page" class="page">
+            <div class="stats-header">
+                <h1>Statistiques et Rapports</h1>
+                <div class="stats-actions">
+                    <div class="stats-tabs">
+                        <button id="daily-stats" class="btn active">Quotidien</button>
+                        <button id="monthly-stats" class="btn">Mensuel</button>
+                    </div>
+                    <div class="pdf-buttons">
+                        <button id="generate-pdf" class="btn btn-secondary">
+                            <span>📄</span>
+                            PDF Détaillé
+                        </button>
+                        <button id="generate-summary-pdf" class="btn btn-primary">
+                            <span>📊</span>
+                            PDF Résumé
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Stats rapides -->
+            <div class="quick-stats">
+                <div class="quick-stat">
+                    <div class="quick-stat-value" id="stats-total-amount">0 €</div>
+                    <div class="quick-stat-label">Revenu total</div>
+                </div>
+                <div class="quick-stat">
+                    <div class="quick-stat-value" id="stats-cleaned-rooms">0</div>
+                    <div class="quick-stat-label">Chambres nettoyées</div>
+                </div>
+                <div class="quick-stat">
+                    <div class="quick-stat-value" id="stats-depart-count">0</div>
+                    <div class="quick-stat-label">Départs</div>
+                </div>
+                <div class="quick-stat">
+                    <div class="quick-stat-value" id="stats-restant-count">0</div>
+                    <div class="quick-stat-label">Restants</div>
+                </div>
+            </div>
+
+            <!-- Graphique élargi -->
+            <div class="stats-card">
+                <h2>Progression</h2>
+                <div class="chart-container" style="height: 300px;">
+                    <canvas id="progress-chart"></canvas>
+                </div>
+            </div>
+
+            <!-- Statistiques détaillées -->
+            <div class="stats-details-grid">
+                <div class="stats-detail-card">
+                    <h3>Revenus par statut</h3>
+                    <div class="stats-breakdown">
+                        <div class="breakdown-item">
+                            <span class="breakdown-label">💰 Départs</span>
+                            <span class="breakdown-value" id="revenue-depart">0 €</span>
+                        </div>
+                        <div class="breakdown-item">
+                            <span class="breakdown-label">💰 Restants</span>
+                            <span class="breakdown-value" id="revenue-restant">0 €</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="stats-detail-card">
+                    <h3>Prix moyen</h3>
+                    <div class="stats-breakdown">
+                        <div class="breakdown-item">
+                            <span class="breakdown-label">📊 Prix moyen global</span>
+                            <span class="breakdown-value" id="average-price">0 €</span>
+                        </div>
+                        <div class="breakdown-item">
+                            <span class="breakdown-label">📊 Prix le plus fréquent</span>
+                            <span class="breakdown-value" id="most-common-price">0 €</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="stats-detail-card">
+                    <h3>Performance</h3>
+                    <div class="stats-breakdown">
+                        <div class="breakdown-item">
+                            <span class="breakdown-label">⚡ Chambres/jour moyen</span>
+                            <span class="breakdown-value" id="rooms-per-day">0</span>
+                        </div>
+                        <div class="breakdown-item">
+                            <span class="breakdown-label">⚡ Revenu/jour moyen</span>
+                            <span class="breakdown-value" id="revenue-per-day">0 €</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="stats-detail-card">
+                    <h3>Période analysée</h3>
+                    <div class="stats-breakdown">
+                        <div class="breakdown-item">
+                            <span class="breakdown-label">📅 Du</span>
+                            <span class="breakdown-value" id="period-start">-</span>
+                        </div>
+                        <div class="breakdown-item">
+                            <span class="breakdown-label">📅 Au</span>
+                            <span class="breakdown-value" id="period-end">-</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Profil -->
+        <div id="profile-page" class="page">
+            <div class="profile-container">
+                <div class="profile-header">
+                    <div class="profile-avatar-section">
+                        <div class="avatar-container">
+                            <img id="profile-avatar-img"
+                                src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgdmlld0JveD0iMCAwIDEwMCAxMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxjaXJjbGUgY3g9IjUwIiBjeT0iNTAiIHI9IjUwIiBmaWxsPSIjNjM2NmYxIi8+Cjx0ZXh0IHg9IjUwIiB5PSI1NSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZmlsbD0id2hpdGUiIGZvbnQtc2l6ZT0iMzAiPvCfkac8L3RleHQ+Cjwvc3ZnPgo="
+                                alt="Avatar" class="avatar-image">
+                            <div class="avatar-upload-overlay">
+                                <span class="upload-icon">📷</span>
+                                <span class="upload-text">Changer</span>
+                            </div>
+                            <input type="file" id="avatar-upload" accept="image/*" style="display: none;">
+                        </div>
+                        <div class="profile-basic-info">
+                            <h1 id="profile-display-name">Nom d'utilisateur</h1>
+                            <p class="profile-subtitle">Gestionnaire de chambre</p>
+                            <div class="profile-status online">
+                                <span class="status-dot"></span>
+                                <span>En ligne</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Statistiques rapides -->
+                <div class="profile-stats-grid">
+                    <div class="profile-stat-card">
+                        <div class="stat-icon">🏨</div>
+                        <div class="stat-info">
+                            <span class="stat-number" id="profile-rooms-stat">0</span>
+                            <span class="stat-label">Chambres gérées</span>
+                        </div>
+                    </div>
+                    <div class="profile-stat-card">
+                        <div class="stat-icon">💰</div>
+                        <div class="stat-info">
+                            <span class="stat-number" id="profile-revenue-stat">0 €</span>
+                            <span class="stat-label">Revenus générés</span>
+                        </div>
+                    </div>
+                    <div class="profile-stat-card">
+                        <div class="stat-icon">📅</div>
+                        <div class="stat-info">
+                            <span class="stat-number" id="profile-days-stat">0</span>
+                            <span class="stat-label">Jours actifs</span>
+                        </div>
+                    </div>
+                    <div class="profile-stat-card">
+                        <div class="stat-icon">⭐</div>
+                        <div class="stat-info">
+                            <span class="stat-number" id="profile-avg-stat">0 €</span>
+                            <span class="stat-label">Moy. par chambre</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Informations détaillées -->
+                <div class="profile-details-section">
+                    <h2>Informations du compte</h2>
+                    <div class="profile-info-cards">
+                        <div class="info-card">
+                            <div class="info-card-header">
+                                <span class="info-icon">👤</span>
+                                <h3>Informations personnelles</h3>
+                            </div>
+                            <div class="info-item">
+                                <label>Nom d'utilisateur</label>
+                                <div id="profile-username" class="info-value"></div>
+                            </div>
+                            <div class="info-item">
+                                <label>Date d'inscription</label>
+                                <div id="profile-registration" class="info-value"></div>
+                            </div>
+                            <div class="info-item">
+                                <label>Dernière activité</label>
+                                <div id="profile-last-active" class="info-value"></div>
+                            </div>
+                        </div>
+
+                        <div class="info-card">
+                            <div class="info-card-header">
+                                <span class="info-icon">🔧</span>
+                                <h3>Paramètres</h3>
+                            </div>
+                            <div class="profile-actions">
+                                <button id="change-password-btn" class="btn btn-outline profile-btn">
+                                    <span class="btn-icon">🔒</span>
+                                    Changer le mot de passe
+                                </button>
+                                <button id="export-data-btn" class="btn btn-secondary profile-btn">
+                                    <span class="btn-icon">📊</span>
+                                    Exporter mes données
+                                </button>
+                                <button id="clear-data-btn" class="btn btn-outline profile-btn danger">
+                                    <span class="btn-icon">🗑️</span>
+                                    Effacer mes données
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Activité récente -->
+                <div class="profile-activity-section">
+                    <h2>Activité récente</h2>
+                    <div class="activity-list" id="profile-activity-list">
+                        <!-- Les activités seront ajoutées dynamiquement -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script type="module" src="app.js"></script>
+</body>
+
+</html>
