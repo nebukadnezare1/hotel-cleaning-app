@@ -8,7 +8,7 @@ CORS(app)
 
 # Répertoires persistants Render
 BASE_DIR = os.path.dirname(__file__)
-DATA_DIR = os.environ.get("DATA_DIR", "/var/data")
+DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
 os.makedirs(DATA_DIR, exist_ok=True)
 
 USERS_FILE = os.path.join(DATA_DIR, "users.json")
