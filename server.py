@@ -4,7 +4,7 @@ from collections import OrderedDict
 import json, os
 
 app = Flask(__name__, static_folder=".", static_url_path="")
-CORS(app)
+CORS(app, resources={r"/*": {"origins": "*"}})
 
 # Répertoires persistants Render
 BASE_DIR = os.path.dirname(__file__)
